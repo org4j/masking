@@ -33,7 +33,7 @@ class MaskingTest {
     @Test
     void isDisabled() {
       assertThat(masking.isEnabled()).isFalse();
-      assertThat(Masking.defaults().isEnabled()).isFalse();
+      assertThat(new Masking(MaskingRules.of(List.of())).isEnabled()).isFalse();
     }
 
     @Test
@@ -82,7 +82,7 @@ class MaskingTest {
 
     @Test
     void usesTheConfiguredMaskCharacter() {
-      var stars = new Masking(MaskingRules.of("*", List.of("pan", "cvv")));
+      var stars = new Masking(new MaskingRules("*", Set.of("pan", "cvv"), Set.of(), List.of()));
       assertThat(stars.maskValue("8600301234567890")).isEqualTo("860030******7890");
       assertThat(stars.maskValue("123")).isEqualTo("***");
     }

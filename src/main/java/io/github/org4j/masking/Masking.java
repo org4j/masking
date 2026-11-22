@@ -1,5 +1,6 @@
 package io.github.org4j.masking;
 
+import static io.github.org4j.masking.MaskingConstants.AMPERSAND;
 import static io.github.org4j.masking.MaskingConstants.KEY_COLON;
 import static io.github.org4j.masking.MaskingConstants.KEY_EQUALS;
 import static io.github.org4j.masking.MaskingConstants.KEY_PATH;
@@ -65,21 +66,13 @@ public final class Masking {
   }
 
   /**
-   * Returns a masking that hides nothing: every method returns its input unchanged.
+   * Returns a masking that hides nothing: every method returns its input unchanged. The one to fall
+   * back on when none is configured.
    *
    * @return a masking with {@linkplain MaskingRules#empty() empty rules}
    */
   public static Masking empty() {
     return new Masking(MaskingRules.empty());
-  }
-
-  /**
-   * Returns the masking to fall back on when none is configured.
-   *
-   * @return the same as {@link #empty()}: the library hides nothing it is not told to
-   */
-  public static Masking defaults() {
-    return empty();
   }
 
   /**
@@ -171,7 +164,9 @@ public final class Masking {
    *     or no rule is configured
    */
   public @Nullable String text(@Nullable String text) {
-    if (text == null || text.isEmpty() || rules.isEmpty()) return text;
+    if (text == null || text.isEmpty() || rules.isEmpty()) {
+      return text;
+    }
     var named = namedPairs(KEY_SPACE, namedPairs(KEY_COLON, namedPairs(KEY_EQUALS, text)));
     return patterns(pathSegments(named));
   }
@@ -186,9 +181,13 @@ public final class Masking {
    */
   public String uri(URI uri) {
     var whole = uri.toString();
-    if (rules.isEmpty()) return whole;
+    if (rules.isEmpty()) {
+      return whole;
+    }
     var query = uri.getRawQuery();
-    if (query == null) return patterns(pathSegments(whole));
+    if (query == null) {
+      return patterns(pathSegments(whole));
+    }
     var start = whole.indexOf('?') + 1;
     var path = pathSegments(whole.substring(0, start));
     return patterns(path + formBody(query) + whole.substring(start + query.length()));
@@ -217,13 +216,23 @@ public final class Masking {
    *     unchanged and uncut when no rule is configured
    */
   public String body(byte @Nullable [] body, @Nullable String contentType) {
-    if (body == null || body.length == 0) return "";
+    if (body == null || body.length == 0) {
+      return "";
+    }
     var text = new String(body, StandardCharsets.UTF_8);
-    if (rules.isEmpty()) return text;
+    if (rules.isEmpty()) {
+      return text;
+    }
     var subtype = subtype(contentType);
-    if (subtype.contains("json")) return shown(jsonBody(text));
-    if (subtype.contains("xml")) return shown(xmlBody(text));
-    if (subtype.equals("x-www-form-urlencoded")) return shown(formBody(text));
+    if (subtype.contains("json")) {
+      return shown(jsonBody(text));
+    }
+    if (subtype.contains("xml")) {
+      return shown(xmlBody(text));
+    }
+    if (subtype.equals("x-www-form-urlencoded")) {
+      return shown(formBody(text));
+    }
     return "<" + body.length + " bytes" + (contentType == null ? "" : ", " + contentType) + ">";
   }
 
@@ -232,7 +241,6 @@ public final class Masking {
     return whole.length() > MAX_LENGTH ? whole.substring(0, MAX_LENGTH) + "…" : whole;
   }
 
-  // Invalid JSON is replaced by its size: it cannot be searched by name.
   private String jsonBody(String text) {
     try {
       var tree = JsonMapper.shared().readTree(text);
@@ -243,7 +251,6 @@ public final class Masking {
     }
   }
 
-  // Every level and every array. A null value stays null.
   private void maskJson(JsonNode node) {
     if (node instanceof ObjectNode object) {
       for (var name : List.copyOf(object.propertyNames())) {
@@ -259,7 +266,7 @@ public final class Masking {
     }
   }
 
-  // Elements (<name>value</name>) and name/value items. Both patterns share their groups.
+  // Both patterns share their groups: opening, name, value, closing.
   private String xmlBody(String text) {
     return replace(XML_ELEMENT, replace(XML_ITEM, text, this::xmlValue), this::xmlValue);
   }
@@ -269,17 +276,16 @@ public final class Masking {
     return rules.contains(name) ? m.group(1) + mask(name, m.group(3)) + m.group(4) : m.group();
   }
 
-  // a=1&b=2: a name is compared decoded, a value is masked as sent.
+  // A name is compared decoded, a value is masked as sent.
   private String formBody(String text) {
-    return Pattern.compile("&")
-        .splitAsStream(text)
-        .map(this::formParameter)
-        .collect(Collectors.joining("&"));
+    return AMPERSAND.splitAsStream(text).map(this::formParameter).collect(Collectors.joining("&"));
   }
 
   private String formParameter(String parameter) {
     var equals = parameter.indexOf('=');
-    if (equals < 0) return parameter;
+    if (equals < 0) {
+      return parameter;
+    }
     var name = URLDecoder.decode(parameter.substring(0, equals), StandardCharsets.UTF_8);
     return rules.contains(name)
         ? parameter.substring(0, equals + 1) + mask(name, parameter.substring(equals + 1))
@@ -293,7 +299,9 @@ public final class Masking {
         text,
         m -> {
           var name = m.group(1);
-          if (!rules.contains(name)) return m.group();
+          if (!rules.contains(name)) {
+            return m.group();
+          }
           var quote = m.group(3);
           return name + m.group(2) + quote + mask(name, m.group(4)) + quote;
         });
@@ -337,7 +345,9 @@ public final class Masking {
 
   // application/problem+json;charset=UTF-8 -> problem+json
   private static String subtype(@Nullable String contentType) {
-    if (contentType == null) return "";
+    if (contentType == null) {
+      return "";
+    }
     var type = contentType.split(";", 2)[0].strip().toLowerCase(Locale.ROOT);
     return type.substring(type.indexOf('/') + 1);
   }

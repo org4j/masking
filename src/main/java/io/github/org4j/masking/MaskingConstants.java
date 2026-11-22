@@ -42,5 +42,7 @@ public final class MaskingConstants {
   // /key/v. Groups: name, value.
   static final Pattern KEY_PATH = Pattern.compile("/([A-Za-z_][\\w.-]*)/([^/?#\\s,;\"']+)");
 
+  static final Pattern AMPERSAND = Pattern.compile("&");
+
   private MaskingConstants() {}
 }

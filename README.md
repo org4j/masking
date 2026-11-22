@@ -1,20 +1,18 @@
 # masking
 
-Used by observability (every log line, every client call) and error (its log line). The library
-knows only generic names; a service configures its logging masking via `org4j.observability.logging.masking.*` in YAML or Vault,
-and no app's field name is hardcoded here.
+Hides sensitive values in text meant for people: log lines, HTTP bodies (JSON, XML, forms), URIs and
+error messages. Plain Java and Jackson, no Spring. Observability masks every log line and client
+call with it, and error masks its log line.
 
 ```groovy
 implementation libs.masking
 ```
 
-Masks sensitive fields across JSON, XML, forms, URI query parameters, and plain text patterns (`key=value`, `key: value`, `key value`, `/key/value`).
-
 ### What a service configures
 
-Nothing is masked by default (`Masking.defaults()` is `Masking.empty()`). The library knows no field
-name and no value pattern: each service sets all of them (`MaskingRules`), through
-`org4j.observability.logging.masking.*` in YAML or Vault.
+Nothing is masked unless a service says so (`Masking.empty()`): the library knows no field name and
+no value pattern. A service sets its `MaskingRules` through
+`org4j.observability.logging.masking.*`, in YAML or Vault.
 
 | Rule | What it masks | How |
 |---|---|---|
@@ -23,8 +21,9 @@ name and no value pattern: each service sets all of them (`MaskingRules`), throu
 | `values` | every match of these patterns, in any text, with or without a name | the base hook |
 
 Names are found in JSON, XML (elements and `<name>`/`<value>` items), forms, URI queries and paths
-(`/pan/8600…`, at any depth), and plain text (`key=value`, `key: value`, `key value`). Patterns run
-on every result: text, URIs and JSON, XML and form bodies. The mask character is configurable (`*`).
+(`/pan/8600…`, at any depth), and plain text (`key=value`, `key: value`, `key value`; a quoted value
+is masked to its closing quote, spaces included). Patterns run on every result: text, URIs and JSON,
+XML and form bodies. The mask character is configurable (`*`).
 
 ```java
 var masking =
