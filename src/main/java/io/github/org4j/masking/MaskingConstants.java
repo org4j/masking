@@ -24,21 +24,25 @@ public final class MaskingConstants {
   static final Pattern XML_ELEMENT =
       Pattern.compile("(<(?:[\\w-]+:)?([\\w-]+)(?:\\s[^>]*)?>)([^<]*)(</)");
 
-  // key=v, key="v". Groups: name, separator, quote, value.
+  // key=v, key="v w". Groups: name, separator, quote, value. A quoted value runs to its closing
+  // quote, spaces and commas included.
   static final Pattern KEY_EQUALS =
-      Pattern.compile("(?<![\\w.-])([A-Za-z_][\\w.-]*)(=)(\"?)([^\\s&,;\"']*)\\3");
+      Pattern.compile("(?<![\\w.-])([A-Za-z_][\\w.-]*)(=)(\"?)((?<=\")[^\"]*|[^\\s&,;\"']*)\\3");
 
   // key: v, "key":"v". A value followed by a colon is skipped, so 12:30:15 is not a pair.
   static final Pattern KEY_COLON =
       Pattern.compile(
-          "(?<![\\w.-])([A-Za-z_][\\w.-]*)(\"?\\s*:\\s*)(\"?)([^\\s&,;\"':]*+)\\3(?!:)");
+          "(?<![\\w.-])([A-Za-z_][\\w.-]*)(\"?\\s*:\\s*)(\"?)((?<=\")[^\"]*+|[^\\s&,;\"':]*+)\\3(?!:)");
 
   // key v, in prose. Any two words match; only a configured name hides the next word.
   static final Pattern KEY_SPACE =
-      Pattern.compile("(?<![\\w.-])([A-Za-z_][\\w.-]*)(\\s+)(\"?)([^\\s&,;\"':]+)\\3");
+      Pattern.compile(
+          "(?<![\\w.-])([A-Za-z_][\\w.-]*)(\\s+)(\"?)((?<=\")[^\"]+|[^\\s&,;\"':]+)\\3");
 
   // /key/v. Groups: name, value.
   static final Pattern KEY_PATH = Pattern.compile("/([A-Za-z_][\\w.-]*)/([^/?#\\s,;\"']+)");
+
+  static final Pattern AMPERSAND = Pattern.compile("&");
 
   private MaskingConstants() {}
 }

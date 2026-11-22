@@ -34,14 +34,7 @@ import java.util.stream.Collectors;
 public record MaskingRules(
     String maskChar, Set<String> fields, Set<String> fullFields, List<Pattern> values) {
 
-  /**
-   * Creates rules, normalizing the names and copying every collection.
-   *
-   * @param maskChar the character that replaces hidden ones; the default when blank
-   * @param fields names whose values take the base hook
-   * @param fullFields names whose values are hidden whole
-   * @param values patterns for values found anywhere
-   */
+  /** Normalizes the names and copies every collection. */
   public MaskingRules {
     maskChar =
         (maskChar == null || maskChar.isBlank()) ? MaskingConstants.DEFAULT_MASK_CHAR : maskChar;
@@ -51,22 +44,12 @@ public record MaskingRules(
   }
 
   /**
-   * Creates rules with base-hook names only: no whole fields and no patterns.
-   *
-   * @param maskChar the character that replaces hidden ones
-   * @param fields names whose values take the base hook
-   */
-  public MaskingRules(String maskChar, Set<String> fields) {
-    this(maskChar, fields, Set.of(), List.of());
-  }
-
-  /**
    * Returns rules that hide nothing.
    *
    * @return rules with no name and no pattern
    */
   public static MaskingRules empty() {
-    return new MaskingRules(MaskingConstants.DEFAULT_MASK_CHAR, Set.of());
+    return of(List.of());
   }
 
   /**
@@ -76,18 +59,8 @@ public record MaskingRules(
    * @return the rules
    */
   public static MaskingRules of(Collection<String> fields) {
-    return new MaskingRules(MaskingConstants.DEFAULT_MASK_CHAR, Set.copyOf(fields));
-  }
-
-  /**
-   * Returns rules with base-hook names only.
-   *
-   * @param maskChar the character that replaces hidden ones
-   * @param fields names whose values take the base hook
-   * @return the rules
-   */
-  public static MaskingRules of(String maskChar, Collection<String> fields) {
-    return new MaskingRules(maskChar, Set.copyOf(fields));
+    return new MaskingRules(
+        MaskingConstants.DEFAULT_MASK_CHAR, Set.copyOf(fields), Set.of(), List.of());
   }
 
   /**
