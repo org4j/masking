@@ -212,6 +212,18 @@ class MaskingTest {
     }
 
     @Test
+    void quotedValuesWholeEvenWithSpacesOrCommas() {
+      assertThat(masking.text("client_secret=\"my s3cr3t\" ok"))
+          .isEqualTo("client_secret=\".........\" ok");
+      assertThat(masking.text("{\"client_secret\":\"a,b c\",\"x\":1}"))
+          .isEqualTo("{\"client_secret\":\".....\",\"x\":1}");
+      assertThat(masking.text("client_secret \"two words\""))
+          .isEqualTo("client_secret \".........\"");
+      assertThat(masking.text("pan=\"8600 3012 3456 7890\""))
+          .isEqualTo("pan=\"8600 3.........7890\"");
+    }
+
+    @Test
     void timesAreNotReadAsPairs() {
       assertThat(masking.text("card: 12:30:15")).isEqualTo("card: 12:30:15");
     }
